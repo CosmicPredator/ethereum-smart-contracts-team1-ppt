@@ -1,0 +1,52 @@
+name: Generate Ethereum Presentation PPTX
+
+on:
+  push:
+    branches:
+      - stable
+    paths:
+      - 'generate_presentation.py'
+      - 'requirements.txt'
+      - '.github/workflows/generate-pptx.yml'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate presentation
+        run: |
+          python generate_presentation.py
+          ls -lh *.pptx
+
+      - name: Upload PPTX as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ethereum-presentation
+          path: Ethereum_Smart_Contracts_Team_1_Deck.pptx
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Ethereum_Smart_Contracts_Team_1_Deck.pptx
+          tag_name: presentation-${{ github.run_number }}
+          body: |
+            Automated presentation build #${{ github.run_number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
